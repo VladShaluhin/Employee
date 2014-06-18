@@ -82,16 +82,35 @@
             this.attributes = {};
             this.set(attributes);
         },
+        /**
+         * Get employee salary month.
+         *
+         */
         getMonthlySalary: function () {
             throw new Error('Redefine \'getMonthlySalary\' method.');
         },
+        /**
+         * Set employee fields.
+         *
+         * @param employeeData
+         */
         set: function (attributes) {
             _.extend(this.attributes, attributes);
             return this;
         },
+        /**
+         * Get employee attr value.
+         *
+         * @param {string}
+         */
         get: function (attr) {
             return this.attributes[attr];
         },
+        /**
+         * Get JSON representation of Employee.
+         *
+         * @returns {{type: *, salary: *, name: *, id: *}}
+         */
         toJSON: function () {
             return _.clone(this.attributes);
         }
@@ -102,12 +121,22 @@
     });
 
     var HourlySalaryEmployee = AbstractEmployee.extend({
+        /**
+         * Get salary of Employee.
+         *
+         * @returns {number}
+         */
         getMonthlySalary: function () {
             return 20.8 * 8 * this.get('salary');
         }
     });
 
     var FixedSalaryEmployee = AbstractEmployee.extend({
+        /**
+         * Get salary of Employee.
+         *
+         * @returns {number}
+         */
         getMonthlySalary: function () {
             return this.get('salary');
         }
@@ -121,6 +150,12 @@
         };
 
         return {
+
+            /**
+             * Create employee based on type.
+             * All employee classes implements the same interface.
+             *
+             */
             create: function (type, arrgs) {
                 var Employee = _constructors[type];
                 if (!Employee) {
@@ -129,6 +164,9 @@
 
                 return new Employee(arrgs);
             },
+            /**
+             * Checks if employee is instance of AbstractEmployee.
+             **/
             isEmployee: function (employee) {
                 return AbstractEmployee.isEmployee(employee);
             }
@@ -143,17 +181,31 @@
             this.set(employees);
             this._configure(options || {});
         },
+        /**
+         * Fetch data and create employees.
+         */
         fetch: function (transport) {
             transport.fetch().done(this.set.bind(this));
             return this;
         },
+        /**
+         * Save employees.
+         */
         save: function (transport) {
             transport.save(this.toJSON());
             return this;
         },
+        /**
+         * Get firs names of employees.
+         *
+         */
         getFirstNames: function (quantity) {
             return this._pluck(this._getByRange(0, quantity), 'name');
         },
+        /**
+         * Get firs names of employees.
+         * @param {number}
+         */
         getLastIds: function (quantity) {
             return this._pluck(this._getByRange(-quantity), 'id');
         },
@@ -297,7 +349,7 @@
             employees.fetch(mockTransport);
         });
         $('#btn-save').on('click', function (){
-            textareaTransport.save(_.object(employees.getFirstNames(3), employees.getLastIds(3)));
+            employees.save(textareaTransport);
         });
     });
 
