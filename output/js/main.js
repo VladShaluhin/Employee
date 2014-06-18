@@ -143,24 +143,22 @@
             this.set(employees);
             this._configure(options || {});
         },
-        load: function (transport) {
+        fetch: function (transport) {
             transport.fetch().done(this.set.bind(this));
+            return this;
         },
         save: function (transport) {
             transport.save(this.toJSON());
+            return this;
         },
-        getFirstFivesNames: function () {
-            return _.map(this._getByRange(0, 5), function (employee) {
-                return employee.get('name');
-            });
+        getFirstNames: function (quantity) {
+            return this._pluck(this._getByRange(0, quantity), 'name');
         },
-        getLastThreeIds: function () {
-            return _.map(this._getByRange(-3), function (employee) {
-                return employee.get('id');
-            });
+        getLastIds: function (quantity) {
+            return this._pluck(this._getByRange(-quantity), 'id');
         },
         toJSON: function () {
-            return _.map(this.emplyees, function (emplyee) {
+            return _.map(this.employees, function (emplyee) {
                 return emplyee.toJSON();
             });
         },
@@ -171,8 +169,13 @@
             }
             return this;
         },
+        _pluck: function(employees, propertyName){
+            return _.map(employees, function (employee) {
+                return employee.get(propertyName);
+            });
+        },
         _push: function (employee) {
-            employee = EmployeesFactory.isEmployee(employee) ? employee : EmployeesFactory.create(obj.type, obj);
+            employee = EmployeesFactory.isEmployee(employee) ? employee : EmployeesFactory.create(employee.type, employee);
             this.employees.push(employee);
             this._sort();
         },
@@ -187,7 +190,7 @@
                 }
 
                 return this._compare(a, b);
-            });
+            }.bind(this));
         },
         _compare: function (a, b) {
             if (a === b) {
@@ -222,23 +225,27 @@
         constructor: function (el) {
             this.init.apply(this, arguments);
         },
-        init: function (el){
-            this.el = el;
+        init: function (options){
+            this.el = options.el;
         },
         fetch: function () {
             var dfd = $.Deferred();
-            _.defer(dfd.resolve.bind(dfd, this.el.val()));
+            _.defer(function(){
+                dfd.resolve(JSON.parse(this.el.val()));
+            }.bind(this));
             return dfd.promise();
         },
         save: function (emplyees) {
-            this.el.val(emplyees);
+            this.el.val(JSON.stringify(emplyees));
         }
     });
 
     var MockTransport = AbstractTransport.extend({
         fetch: function () {
             var dfd = $.Deferred();
-            _.defer(dfd.resolve.bind(dfd, mock));
+            _.defer(function(){
+                dfd.resolve(mock);
+            }.bind(this));
             return dfd.promise();
         },
         save: function (emplyees) {
@@ -279,20 +286,19 @@
         }
     ];
 
+    $(function(){
+        var employees = new EmployeesCollection();
+        var mockTransport = new MockTransport();
+        var textareaTransport = new TextareaTransport({
+            el: $('#users-data')
+        });
 
-    var employees = new EmployeesCollection([], {
-        transport: new MockTransport()
+        $('#btn-create').on('click', function (){
+            employees.fetch(mockTransport);
+        });
+        $('#btn-save').on('click', function (){
+            textareaTransport.save(_.object(employees.getFirstNames(3), employees.getLastIds(3)));
+        });
     });
-
-    var transport = new MockTransport();
-
-    employees.fetch();
-
-    employees.load(transport);
-    employees.save(transport);
-
-    console.log(employees.getFirstFive());
-    console.log(employees.getLastThree());
-
 
 }());
